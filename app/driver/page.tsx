@@ -1,47 +1,80 @@
 "use client";
 
-import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { useEffect, useState } from "react";
+import mapboxgl from "mapbox-gl";
 
-export default function DriverLogin() {
-  const [email, setEmail] = useState("");
+mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY!;
 
-const signIn = async () => {
-  // create driver record if not exists
-  await fetch("/api/driver/init", {
-    method: "POST",
-    body: JSON.stringify({ email }),
-  });
+export default function PassengerRequest() {
+  const [map, setMap] = useState<mapboxgl.Map | null>(null);
+  const [marker, setMarker] = useState<mapboxgl.Marker | null>(null);
+  const [locationConfirmed, setLocationConfirmed] = useState(false);
 
-  await supabase.auth.signInWithOtp({ email });
-  alert("Check your email to continue");
-};
+  // Init map
+  useEffect(() => {
+    const m = new mapboxgl.Map({
+      container: "map",
+      style: "mapbox://styles/mapbox/streets-v12",
+      center: [-6.2603, 53.3498],
+      zoom: 12,
+    });
 
+    setMap(m);
+  }, []);
+
+  const refreshLocation = () => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lng = pos.coords.longitude;
+        const lat = pos.coords.latitude;
+
+        if (map) {
+          map.flyTo({ center: [lng, lat], zoom: 15 });
+
+          if (marker) {
+            marker.setLngLat([lng, lat]);
+          } else {
+            const mk = new mapboxgl.Marker({ color: "#1E90FF" })
+              .setLngLat([lng, lat])
+              .addTo(map);
+            setMarker(mk);
+          }
+        }
+
+        setLocationConfirmed(true);
+      },
+      () => alert("Could not get location"),
+      { enableHighAccuracy: true }
+    );
+  };
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold">Driver Login</h1>
+    <div className="w-full h-screen relative">
+      {/* MAP */}
+      <div id="map" className="w-full h-full" />
 
-      <input
-        className="border p-2 mt-4 w-full"
-        placeholder="Driver Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
+      {/* TOP BAR */}
+      <div className="absolute top-0 w-full p-4 bg-white/80 backdrop-blur shadow">
+        <h1 className="text-xl font-bold">Heiyu Taxi</h1>
+      </div>
 
+      {/* REFRESH LOCATION */}
       <button
-        onClick={signIn}
-        className="bg-black text-white px-4 py-2 mt-4 w-full"
+        onClick={refreshLocation}
+        className="absolute bottom-32 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-8 py-4 rounded-full shadow-xl text-lg"
       >
-        Continue
+        Refresh Location
       </button>
-      <p className="mt-4 text-sm text-gray-500">
-  After clicking the login link in your email, go to{" "}
-  <a href="/driver/dashboard" className="text-blue-600 underline">
-    /driver/dashboard
-  </a>
-</p>
 
+      {/* REQUEST TAXI — only after location confirmed */}
+      {locationConfirmed && (
+        <button
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-black text-white text-lg px-8 py-4 rounded-full shadow-xl"
+        >
+          Request Taxi
+        </button>
+      )}
     </div>
   );
 }
+

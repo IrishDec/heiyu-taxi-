@@ -38,27 +38,27 @@ export default function DriverDashboard() {
       .eq("id", driver.id);
   };
 
-useEffect(() => {
-  if (!driver) return;
+  // Listen for new ride requests
+  useEffect(() => {
+    if (!driver) return;
 
-  const channel = supabase
-    .channel("rides")
-    .on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "ride_requests" },
-      (payload) => {
-        if (status === "available") {
-          setIncomingRide(payload.new);
+    const channel = supabase
+      .channel("rides")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "ride_requests" },
+        (payload) => {
+          if (status === "available") {
+            setIncomingRide(payload.new);
+          }
         }
-      }
-    )
-    .subscribe();
+      )
+      .subscribe();
 
-  return () => {
-    supabase.removeChannel(channel);
-  };
-}, [driver, status]);
-
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [driver, status]);
 
   // Accept ride
   const acceptRide = async () => {
@@ -76,30 +76,49 @@ useEffect(() => {
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold">Driver Dashboard</h1>
+    <div className="w-full h-screen relative">
+      {/* TOP BAR */}
+      <div className="absolute top-0 w-full p-4 bg-white/90 backdrop-blur shadow z-10">
+        <h1 className="text-2xl font-bold">Heiyu Taxi — Driver</h1>
+        <p className="text-sm text-gray-600">
+          Status: {status === "available" ? "🟢 Online" : "🔴 Offline"}
+        </p>
+      </div>
 
+      {/* MAP PLACEHOLDER */}
+      <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
+        <p>Map coming soon…</p>
+      </div>
+
+      {/* TOGGLE STATUS BUTTON */}
       <button
         onClick={toggleStatus}
-        className={`px-4 py-2 mt-4 text-white ${
+        className={`absolute bottom-32 left-1/2 -translate-x-1/2 px-10 py-4 text-xl rounded-full shadow-xl text-white ${
           status === "available" ? "bg-red-600" : "bg-green-600"
         }`}
       >
         {status === "available" ? "Go Offline" : "Go Online"}
       </button>
 
+      {/* INCOMING REQUEST POPUP */}
       {incomingRide && (
-        <div className="mt-6 p-4 border rounded">
-          <h2 className="font-bold">New Ride Request</h2>
-          <p>
+        <div className="absolute bottom-0 w-full p-6 pb-10 bg-white shadow-xl rounded-t-2xl animation-slide-up">
+          <h2 className="text-xl font-bold mb-2">New Ride Request</h2>
+          <p className="text-gray-700 mb-4">
             Pickup: {incomingRide.pickup_lat}, {incomingRide.pickup_lng}
           </p>
-          <button
-            className="bg-black text-white px-4 py-2 mt-3"
-            onClick={acceptRide}
-          >
-            Accept Ride
-          </button>
+
+          <div className="flex gap-4">
+            <button
+              onClick={acceptRide}
+              className="flex-1 bg-black text-white py-3 rounded-lg text-lg"
+            >
+              Accept
+            </button>
+            <button className="flex-1 bg-gray-300 py-3 rounded-lg text-lg">
+              Decline
+            </button>
+          </div>
         </div>
       )}
     </div>
