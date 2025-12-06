@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import mapboxgl from "mapbox-gl";
+import Image from "next/image";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY!;
 
 export default function PassengerPage() {
   const [map, setMap] = useState<mapboxgl.Map | null>(null);
-  const [marker, setMarker] = useState<mapboxgl.Marker | null>(null);
   const [locationConfirmed, setLocationConfirmed] = useState(false);
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
@@ -18,7 +18,7 @@ export default function PassengerPage() {
       container: "map",
       style: "mapbox://styles/mapbox/streets-v12",
       center: [-6.2603, 53.3498],
-      zoom: 12,
+      zoom: 13,
     });
 
     setMap(m);
@@ -36,15 +36,6 @@ export default function PassengerPage() {
 
         if (map) {
           map.flyTo({ center: [newLng, newLat], zoom: 15 });
-
-          if (marker) {
-            marker.setLngLat([newLng, newLat]);
-          } else {
-            const mk = new mapboxgl.Marker({ color: "#1E90FF" })
-              .setLngLat([newLng, newLat])
-              .addTo(map);
-            setMarker(mk);
-          }
         }
 
         setLocationConfirmed(true);
@@ -59,21 +50,35 @@ export default function PassengerPage() {
       {/* MAP */}
       <div id="map" className="w-full h-full" />
 
-      {/* TOP BAR - more solid + readable */}
-      <div className="absolute top-0 w-full p-4 bg-white shadow-md z-10">
-        <h1 className="text-2xl font-bold text-gray-900">Heiyu Taxi</h1>
-        <p className="text-sm text-gray-600">Find a driver near you</p>
+      {/* CENTER PIN */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full z-10">
+        <Image
+          src="/pin.png"
+          width={40}
+          height={40}
+          alt="pickup pin"
+        />
       </div>
 
-      {/* REFRESH BUTTON - only before location is confirmed */}
-      {!locationConfirmed && (
+      {/* TOP BAR */}
+      <div className="absolute top-0 w-full p-4 bg-white shadow-md z-20 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Heiyu Taxi</h1>
+          {!locationConfirmed && (
+            <p className="text-sm text-gray-600">
+              Refresh your location to request a taxi
+            </p>
+          )}
+        </div>
+
+        {/* Refresh Button (always visible) */}
         <button
           onClick={refreshLocation}
-          className="absolute bottom-32 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-lg px-8 py-4 rounded-full shadow-xl z-10"
+          className="bg-blue-600 text-white px-4 py-2 rounded-full shadow"
         >
-          Refresh Location
+          Refresh
         </button>
-      )}
+      </div>
 
       {/* SLIDE-UP BOTTOM SHEET */}
       <div
