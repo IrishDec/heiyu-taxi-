@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import mapboxgl from "mapbox-gl";
 import Image from "next/image";
+import mapboxgl from "mapbox-gl";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_KEY!;
 
@@ -19,12 +19,23 @@ export default function PassengerPage() {
       style: "mapbox://styles/mapbox/streets-v12",
       center: [-6.2603, 53.3498],
       zoom: 13,
+      attributionControl: false, // We add custom attribution below
     });
+
+    // Add tiny attribution legally
+    m.addControl(
+      new mapboxgl.AttributionControl({
+        compact: true,
+        customAttribution:
+          '<span style="font-size:10px; opacity:0.6;">© Mapbox © OpenStreetMap</span>',
+      }),
+      "bottom-left"
+    );
 
     setMap(m);
   }, []);
 
-  // Refresh Location (GPS)
+  // Refresh location
   const refreshLocation = () => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -50,28 +61,26 @@ export default function PassengerPage() {
       {/* MAP */}
       <div id="map" className="w-full h-full" />
 
+      {/* MESSAGE CENTERED OVER MAP */}
+      {!locationConfirmed && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm px-4 py-3 rounded-xl text-gray-900 text-center shadow-lg z-20">
+          Refresh your location to request a taxi
+        </div>
+      )}
+
       {/* CENTER PIN */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-full z-10">
-        <Image
-          src="/pin.png"
-          width={40}
-          height={40}
-          alt="pickup pin"
-        />
+        <Image src="/pin.png" width={44} height={44} alt="pickup pin" />
       </div>
 
       {/* TOP BAR */}
       <div className="absolute top-0 w-full p-4 bg-white shadow-md z-20 flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Heiyu Taxi</h1>
-          {!locationConfirmed && (
-            <p className="text-sm text-gray-600">
-              Refresh your location to request a taxi
-            </p>
-          )}
+          <p className="text-sm text-gray-600">Find a driver near you</p>
         </div>
 
-        {/* Refresh Button (always visible) */}
+        {/* Refresh button */}
         <button
           onClick={refreshLocation}
           className="bg-blue-600 text-white px-4 py-2 rounded-full shadow"
@@ -80,21 +89,30 @@ export default function PassengerPage() {
         </button>
       </div>
 
-      {/* SLIDE-UP BOTTOM SHEET */}
+      {/* BOTTOM SHEET */}
       <div
-        className={`absolute bottom-0 left-0 w-full bg-white shadow-2xl rounded-t-2xl p-6 transition-transform duration-300 ${
+        className={`absolute bottom-0 left-0 w-full bg-white shadow-xl rounded-t-2xl p-6 transition-transform duration-300 ${
           locationConfirmed ? "translate-y-0" : "translate-y-full"
         }`}
         style={{ minHeight: "180px" }}
       >
         <h2 className="text-xl font-semibold mb-2">Pickup Confirmed</h2>
-        <p className="text-gray-700 mb-4">
-          Your location has been detected.
-        </p>
+        <p className="text-gray-700 mb-4">Your location has been detected.</p>
 
         <button className="w-full bg-black text-white py-4 rounded-xl text-lg shadow-md">
           Request Taxi
         </button>
+      </div>
+
+      {/* FOOTER BRANDING */}
+      <div className="absolute bottom-2 w-full text-center text-xs text-gray-500">
+        <a
+          href="https://www.heiyudigital.com"
+          className="hover:text-gray-700 underline"
+          target="_blank"
+        >
+          Built by HeiyuDigital
+        </a>
       </div>
     </div>
   );
